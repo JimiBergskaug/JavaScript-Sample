@@ -1,0 +1,193 @@
+var rivit = 10
+//uus appi
+var app = SpreadsheetApp;
+//otetaa siihe tää sheetsikokonaisuus
+var ss = app.getActiveSpreadsheet();
+var lauseet = ss.getSheetByName("Data");
+var lauseAlue = lauseet.getRange(2, 4, 200);
+var treenaaja = ss.getActiveSheet().getRange("H1").getValue();
+//ohjelma-arkki olioks
+var ohjelma = ss.getSheetByName("Ohjelma_" + treenaaja);
+//solu, jost löytyy valittu treeni 
+var treeni = ohjelma.getRange("H21").getValue();
+//arkki jolta haetaan liikkeet ja viimeks tehdyt tulokset
+var tulokset = ss.getSheetByName("Tulokset_" + treeni + "_" + treenaaja);
+//alue ohjelma-arkilla jolla on liikkeet, ja sillä kertaa tehdyt tulokset
+var liikkeet = ohjelma.getRange(2, 1, rivit, 6);
+//alue ohjelma-arkilla, jossa on viime kerra tulokset
+var viimeksi = ohjelma.getRange(13, 1, rivit + 2, 2)
+//alue tulos-arkilla josta haetaan liikkeet ja vikat suoritukset
+var tuloksia = tulokset.getRange(2, 1, rivit + 2 , 36);
+var painoa = 2;    //painosuoritusten sarakenumero
+var toistoa = 4;   //toistojen sarakenumero
+var kierrosta = 6; //kierrosten sarakenumero
+var i = 1;         //apumuuttuja sarjojen kirjottamisee
+var vika = 1;      //apumuuttaja vikan tallennetun treenin tulosten sarakkeesee
+var liikkeita = 1; //apumuuttuja liikkeide vikan rivin ettimisee
+var suorite = 1;   //tulos-arkin liikkeiden sarakenumero
+var viimeks = 2;   //viimekertasten tulosten sarakenumero
+
+
+
+function onEdit(e) {
+  if (e.range.getA1Notation() == 'H24'){
+    vieDatat();
+  }
+  if(e.range.getA1Notation() == 'H22'){
+    haeOhjelma();
+  }
+  if(e.range.getA1Notation() == 'H23'){
+    tyhjenna();
+  }
+  if(e.range.getA1Notation() == 'H20'){
+    naytaMotiTeksti();
+  }
+}
+
+function haeOhjelma(){
+  haeLiikkeet(laskeLiikkeet()-1);
+  poistaYlimaarasetLiikkeetjaTulokset(laskeLiikkeet()-1, rivit);
+  haeViimeisimmatTulokset(laskeLiikkeet(), etiVika());
+}  
+  
+function vieDatat() { 
+  vieTreenitMuistiin(painoa,etiVika(), laskeLiikkeet()-1);
+  tyhjennaSpeksit(painoa,viimeks,liikkeita); 
+}
+
+function tyhjenna(){
+  tyhjennaSpeksit(painoa,viimeks,liikkeita);
+}
+
+
+
+
+
+
+
+
+function etiVika(){
+  var vika = 1;
+  while (true){
+    if(tuloksia.getCell(2,vika).isBlank()){
+      break;
+    }
+    vika++;
+  }
+  return vika;
+}
+
+function laskeLiikkeet(){
+  var liikkeita = 1;
+  while (true){
+    if (tuloksia.getCell(liikkeita, 1).isBlank()){
+      break;
+    }
+    liikkeita++;
+  }
+  return liikkeita;
+}
+
+function haeLiikkeet(liikkeita){
+  var suorite = 1;
+  for (i = 1; i < liikkeita; i++){
+    var liike = tuloksia.getCell(i+1,suorite).getValue();
+    liikkeet.getCell(i, suorite).setValue(liike)
+  }
+}
+
+function haeViimeisimmatTulokset(liikkeita, vika){
+  if(vika == 2){
+    return;
+  }
+  for(i = 1; i < liikkeita; i++){
+    var viimeisinTulos = tuloksia.getCell(i+1, vika -1).getValue();
+    viimeksi.getCell(i, 2).setValue(viimeisinTulos);
+  }
+}
+
+function vieTreenitMuistiin(painoa,vika, liikkeita){
+  
+  for (i = 1; i < liikkeita; i++){
+    var paino = liikkeet.getCell(i, painoa).getValue();
+    tuloksia.getCell(i+1,vika).setValue(paino);    
+  } 
+  lisaaPaivanMaaraTuloksiin(vika);
+  
+}
+
+function lisaaPaivanMaaraTuloksiin(vika){
+  var today = new Date();
+  var paiva = today.getDate()+'.'+(today.getMonth()+1)+'.'+today.getFullYear();
+  if(vika == 1){
+    return;
+  }
+  tuloksia.getCell(1,vika).setValue(paiva);
+}
+
+function tyhjennaSpeksit(painoa,viimeks,liikkeita){
+  for (i = 1; i < 10; i++){
+    liikkeet.getCell(i, painoa).setValue("");
+    liikkeet.getCell(i, liikkeita).setValue("");
+    viimeksi.getCell(i,viimeks).setValue("");
+  }
+}
+
+function poistaYlimaarasetLiikkeetjaTulokset(liikkeita,rivit){
+  if(liikkeita == rivit){
+    return;
+  }
+  for (var i = liikkeita; i <= rivit; i++){
+    liikkeet.getCell(i, 1).setValue("");
+    viimeksi.getCell(i, 2).setValue("");
+  }
+}
+  
+  function naytaMotiTeksti(){
+    var lauseita = 1;
+    var motiTeksti = 'testi';
+   
+    while (true){
+      if(lauseAlue.getCell(lauseita, 1).isBlank()){
+        break;
+      }
+      lauseita++;
+    }
+    
+    var randomi = Math.floor(Math.random() * lauseita);
+    
+    motiTeksti = lauseAlue.getCell(randomi, 1).getValue();
+    lauseet.getRange('B2').setValue(motiTeksti);
+        
+        //hanki tähä pätkä joka arpoo motitekstin
+    SpreadsheetApp.getUi() // Or DocumentApp or SlidesApp or FormApp.
+    .createMenu('Custom Menu')
+    .addItem('Show alert', 'showAlert')
+    .addToUi();
+    
+    var ui = SpreadsheetApp.getUi(); // Same variations.
+    
+    
+    var result = ui.alert(
+      motiTeksti,
+      'Saitko tarpeeksi voimaa?',
+      ui.ButtonSet.YES_NO);
+    
+    // Process the user's response.
+    if (result == ui.Button.YES) {
+      // User clicked "Yes".
+      ui.alert('Voima olkoon kanssasi.');
+    } else {
+      // User clicked "No" or X in the title bar.
+      naytaMotiTeksti();
+      
+    }
+  }
+
+
+
+
+
+
+
+
